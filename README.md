@@ -1,6 +1,6 @@
 # Paradox Dictation
 
-Paradox Dictation is a focused dictation workspace that runs in a Linux browser or as an installable Linux desktop app. It stores drafts and saved sessions locally on the device.
+Paradox Dictation is a desktop-first Linux dictation utility, not a hosted web mockup. The Electron app lives in the tray, captures microphone audio, turns speech into editable text when the local Chromium speech engine is available, and keeps drafts and saved sessions on the device. A browser/PWA version is included as a convenient secondary client.
 
 ## Run it in a browser
 

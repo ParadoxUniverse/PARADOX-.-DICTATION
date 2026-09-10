@@ -30,7 +30,13 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "category": "Utility",
-      "executableName": "paradox-dictation"
+      "executableName": "paradox-dictation",
+      "icon": "build/icon.png",
+      "desktop": {
+        "Name": "Paradox Dictation",
+        "Comment": "Private, focused dictation",
+        "StartupWMClass": "paradox-dictation"
+      }
     }
   },
   "devDependencies": {

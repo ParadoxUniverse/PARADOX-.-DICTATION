@@ -136,6 +136,14 @@ if (gotSingleInstanceLock) app.whenReady().then(() => {
     await fs.promises.writeFile(destination, Buffer.from(bytes));
     return destination;
   });
+  ipcMain.handle('save-text', async (_event, { text, suggestedName }) => {
+    const downloads = app.getPath('downloads');
+    const safeName = String(suggestedName || 'paradox-transcript.txt').replace(/[^a-z0-9._-]/gi, '-');
+    const destination = path.join(downloads, safeName);
+    await fs.promises.writeFile(destination, String(text || ''), 'utf8');
+    return destination;
+  });
+  ipcMain.on('set-widget-on-close', (_event, enabled) => { showWidgetOnClose = Boolean(enabled); refreshTrayMenu(); });
   ipcMain.on('widget-toggle', toggleWidget);
   ipcMain.on('widget-show-main', showMainWindow);
   ipcMain.on('widget-close', hideWidget);

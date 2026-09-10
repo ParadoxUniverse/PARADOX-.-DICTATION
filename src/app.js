@@ -13,7 +13,9 @@ const iconPaths = {
   quote: '<path d="M7.5 15.5H5a1 1 0 0 1-1-1V10a3 3 0 0 1 3-3h1v3H6.5a1 1 0 0 0-1 1v.5h2v4Zm8 0H13a1 1 0 0 1-1-1V10a3 3 0 0 1 3-3h1v3h-1.5a1 1 0 0 0-1 1v.5h2v4Z"/>',
   list: '<path d="M8 6h11M8 12h11M8 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
   pen: '<path d="m15.5 5.5 3 3L8 19l-4 1 1-4 10.5-10.5Z"/><path d="m13 8 3 3"/>',
-  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>'
+  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  search: '<circle cx="10.8" cy="10.8" r="5.8"/><path d="m15.2 15.2 4 4"/>',
+  settings: '<path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z"/><path d="m19.2 13.7 1.3 1-.9 1.6-1.6-.5a7.8 7.8 0 0 1-1.5 1.2l-.1 1.7h-1.9l-.5-1.6a7.6 7.6 0 0 1-1.9.2l-1 1.3-1.7-.8.4-1.7a7.5 7.5 0 0 1-1.4-1.4l-1.7.4-.8-1.7 1.3-1a7.8 7.8 0 0 1-.1-1.9l-1.4-1 .8-1.7 1.7.4a7.5 7.5 0 0 1 1.4-1.4l-.4-1.7 1.7-.8 1 1.3a7.6 7.6 0 0 1 1.9-.2l.5-1.6h1.9l.1 1.7a7.8 7.8 0 0 1 1.5 1.2l1.6-.5.9 1.6-1.3 1a7.8 7.8 0 0 1 .1 1.9Z"/>'
 };
 function icon(name) { return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || ''}</svg>`; }
 
@@ -42,6 +44,12 @@ let finalTranscript = '';
 let deferredInstallPrompt;
 const STORAGE_KEY = 'paradox-dictation-sessions';
 const DRAFT_KEY = 'paradox-dictation-draft';
+const AUTOSAVE_KEY = 'paradox-dictation-autosave';
+const LANGUAGE_KEY = 'paradox-dictation-language';
+const getPreference = (key, fallback) => {
+  try { return localStorage.getItem(key) ?? fallback; }
+  catch (error) { return fallback; }
+};
 
 function showToast(message, type = '') {
   toast.textContent = message;
@@ -73,6 +81,7 @@ function writeSessions(sessions) {
 }
 function persistDraft() {
   try {
+    if (getPreference(AUTOSAVE_KEY, 'true') !== 'true') return;
     if (getText()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: getText(), elapsed }));
     else localStorage.removeItem(DRAFT_KEY);
   } catch (error) { /* private browsing may disable storage */ }
@@ -103,6 +112,7 @@ function selectSession(item) {
     finalTranscript = item._sessionText;
     updateWordCount();
     persistDraft();
+    $('#download-transcript-button').hidden = !getText();
   }
   showToast(`Opened “${item.dataset.title}”.`);
 }
@@ -115,6 +125,18 @@ function attachSessionListeners(root = document) {
       selectSession(item);
     });
   });
+}
+function filterSessions(query = $('#session-search')?.value || '') {
+  const normalized = query.trim().toLowerCase();
+  const items = $$('.session-item');
+  let visible = 0;
+  items.forEach((item) => {
+    const matches = !normalized || item.dataset.title.toLowerCase().includes(normalized);
+    item.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  const summary = $('#session-summary');
+  if (summary) summary.textContent = normalized ? `${visible} match${visible === 1 ? '' : 'es'}` : `${items.length} saved`;
 }
 function restoreWorkspace() {
   const list = $('#session-list');
@@ -149,7 +171,7 @@ function buildRecognition() {
   const instance = new Recognition();
   instance.continuous = true;
   instance.interimResults = true;
-  instance.lang = 'en-US';
+  instance.lang = getPreference(LANGUAGE_KEY, 'en-US');
   instance.onresult = (event) => {
     let interim = '';
     for (let i = event.resultIndex; i < event.results.length; i += 1) {
@@ -218,10 +240,25 @@ if (window.paradoxDesktop?.onWidgetCommand) {
     if (!isRecording) startRecording();
   });
 }
-editor.addEventListener('input', () => { finalTranscript = editor.innerText; updateWordCount(); persistDraft(); });
+editor.addEventListener('input', () => { finalTranscript = editor.innerText; updateWordCount(); persistDraft(); $('#download-transcript-button').hidden = !getText(); });
 $('#clear-button').addEventListener('click', () => {
   if (!getText()) { showToast('There is nothing to clear.'); return; }
-  editor.textContent = ''; finalTranscript = ''; updateWordCount(); persistDraft(); showToast('Transcript cleared.');
+  editor.textContent = ''; finalTranscript = ''; updateWordCount(); persistDraft(); $('#download-transcript-button').hidden = true; showToast('Transcript cleared.');
+});
+$('#download-transcript-button').addEventListener('click', async () => {
+  const text = getText();
+  if (!text) { showToast('Add a few words before exporting.', 'error'); return; }
+  const safeTitle = titleFromTranscript(text).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'paradox-session';
+  const filename = `${safeTitle}.txt`;
+  if (window.paradoxDesktop?.saveText) {
+    const destination = await window.paradoxDesktop.saveText(text, filename);
+    showToast(`Transcript saved to ${destination}.`, 'success');
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Transcript download started.', 'success');
 });
 $('#download-audio-button').addEventListener('click', async () => {
   if (!lastRecordingBlob) { showToast('Record something first.', 'error'); return; }
@@ -262,7 +299,7 @@ $('#save-button').addEventListener('click', () => {
 });
 $('#new-session').addEventListener('click', () => {
   if (isRecording) stopRecording();
-  editor.textContent = ''; finalTranscript = ''; elapsed = 0; recordTime.textContent = '00:00'; updateWordCount(); persistDraft();
+  editor.textContent = ''; finalTranscript = ''; elapsed = 0; recordTime.textContent = '00:00'; updateWordCount(); persistDraft(); $('#download-transcript-button').hidden = true;
   $('#panel-title-text').textContent = 'Quick dictation';
   $$('.session-item').forEach(el => el.classList.remove('selected'));
   document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -281,7 +318,43 @@ $('#audio-input').addEventListener('change', (event) => {
 $$('.nav-item').forEach((item) => item.addEventListener('click', () => {
   $$('.nav-item').forEach(el => el.classList.remove('active')); item.classList.add('active');
 }));
-$('#view-all').addEventListener('click', () => showToast('You are viewing your most recent sessions.'));
+$('#session-search').addEventListener('input', (event) => filterSessions(event.target.value));
+$('#view-all').addEventListener('click', () => { $('#session-search').value = ''; filterSessions(); showToast('Showing all saved sessions.'); });
+
+const settingsModal = $('#settings-modal');
+const languagePreference = $('#language-preference');
+const autosaveToggle = $('#autosave-toggle');
+const closeWidgetToggle = $('#close-widget-toggle');
+function openSettings() {
+  languagePreference.value = getPreference(LANGUAGE_KEY, 'en-US');
+  autosaveToggle.checked = getPreference(AUTOSAVE_KEY, 'true') === 'true';
+  closeWidgetToggle.checked = getPreference('paradox-widget-on-close', 'true') === 'true';
+  settingsModal.classList.add('open');
+  settingsModal.setAttribute('aria-hidden', 'false');
+}
+function closeSettings() {
+  settingsModal.classList.remove('open');
+  settingsModal.setAttribute('aria-hidden', 'true');
+}
+$('#settings-button').addEventListener('click', openSettings);
+$('#account-button').addEventListener('click', openSettings);
+$('#close-settings').addEventListener('click', closeSettings);
+$('#done-settings').addEventListener('click', closeSettings);
+settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
+languagePreference.addEventListener('change', (event) => {
+  localStorage.setItem(LANGUAGE_KEY, event.target.value);
+  if (recognition) { try { recognition.lang = event.target.value; } catch (error) { /* restart recording to apply */ } }
+  showToast(`Dictation language set to ${event.target.options[event.target.selectedIndex].text}.`, 'success');
+});
+autosaveToggle.addEventListener('change', (event) => {
+  localStorage.setItem(AUTOSAVE_KEY, String(event.target.checked));
+  if (!event.target.checked) localStorage.removeItem(DRAFT_KEY);
+  else persistDraft();
+});
+closeWidgetToggle.addEventListener('change', (event) => {
+  localStorage.setItem('paradox-widget-on-close', String(event.target.checked));
+  window.paradoxDesktop?.setWidgetOnClose?.(event.target.checked);
+});
 $('.tip-close').addEventListener('click', (event) => { event.currentTarget.closest('.tip-card').classList.add('dismissed'); });
 
 const sidebar = $('#sidebar');
@@ -317,5 +390,8 @@ installButton.addEventListener('click', async () => {
 });
 window.addEventListener('appinstalled', () => { installButton.hidden = true; showToast('Paradox was installed on your computer.', 'success'); });
 if (navigator.serviceWorker) navigator.serviceWorker.register('./sw.js').catch(() => { /* offline mode is optional in Electron */ });
+window.paradoxDesktop?.setWidgetOnClose?.(getPreference('paradox-widget-on-close', 'true') === 'true');
 restoreWorkspace();
+filterSessions();
 updateWordCount();
+$('#download-transcript-button').hidden = !getText();
