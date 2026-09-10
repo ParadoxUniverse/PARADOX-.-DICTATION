@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101110" />
+    <title>Paradox — Dictation, without the friction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand-row">
+          <a class="brand" href="#" aria-label="Paradox home">
+            <span class="brand-mark"><span></span><span></span><span></span></span>
+            <span>PARADOX</span>
+          </a>
+          <button class="icon-button sidebar-close" id="close-sidebar" aria-label="Close menu" data-tooltip="Close menu">
+            <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <button class="new-session" id="new-session">
+          <span class="plus-icon">+</span>
+          <span>New session</span>
+          <span class="shortcut">⌘ N</span>
+        </button>
+
+        <nav class="side-nav" aria-label="Main navigation">
+          <p class="nav-label">Workspace</p>
+          <a class="nav-item active" href="#workspace"><span class="nav-icon">${icon('grid')}</span><span>Workspace</span></a>
+          <a class="nav-item" href="#sessions"><span class="nav-icon">${icon('clock')}</span><span>All sessions</span><span class="nav-count">12</span></a>
+          <a class="nav-item" href="#starred"><span class="nav-icon">${icon('star')}</span><span>Starred</span></a>
+          <a class="nav-item" href="#trash"><span class="nav-icon">${icon('trash')}</span><span>Trash</span></a>
+          <p class="nav-label nav-label-spaced">Collections <button class="tiny-plus" aria-label="Add collection">+</button></p>
+          <a class="nav-item collection" href="#ideas"><i class="collection-dot coral"></i><span>Ideas & notes</span><span class="nav-count">7</span></a>
+          <a class="nav-item collection" href="#meetings"><i class="collection-dot lavender"></i><span>Meetings</span><span class="nav-count">3</span></a>
+          <a class="nav-item collection" href="#journal"><i class="collection-dot yellow"></i><span>Journal</span><span class="nav-count">2</span></a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="usage-card">
+            <div class="usage-head"><span>Monthly minutes</span><span>68%</span></div>
+            <div class="usage-bar"><span></span></div>
+            <p><strong>68</strong> of 100 minutes used</p>
+            <button class="upgrade-button">Upgrade plan <span>↗</span></button>
+          </div>
+          <div class="user-row">
+            <div class="avatar">AS</div>
+            <div class="user-info"><strong>Alex Smith</strong><span>Free plan</span></div>
+            <button class="more-button" aria-label="Account options">•••</button>
+          </div>
+        </div>
+      </aside>
+
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+      <main class="main-content" id="workspace">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="open-sidebar" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong>Overview</strong></div>
+          <div class="top-actions">
+            <button class="help-link"><span class="help-dot">?</span> Help center</button>
+            <button class="icon-button" id="theme-button" aria-label="Toggle theme" data-tooltip="Toggle theme"><svg viewBox="0 0 24 24"><path d="M20.5 15.1A8.4 8.4 0 0 1 8.9 3.5 8.4 8.4 0 1 0 20.5 15.1Z"/></svg></button>
+            <button class="notification-button" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button>
+            <div class="top-avatar">AS</div>
+          </div>
+        </header>
+
+        <div class="content-wrap">
+          <section class="welcome-row">
+            <div>
+              <p class="eyebrow"><span class="status-orb"></span> Wednesday, September 10, 2026</p>
+              <h1>Good morning, Alex <span class="wave-emoji">✦</span></h1>
+              <p class="subtitle">Capture the thought before it disappears.</p>
+            </div>
+            <div class="quick-actions">
+              <button class="secondary-button" id="import-button"><span>${icon('upload')}</span> Import audio</button>
+              <button class="primary-button" id="start-top"><span class="mic-small">${icon('mic')}</span> Start dictating</button>
+              <input type="file" id="audio-input" accept="audio/*" hidden>
+            </div>
+          </section>
+
+          <section class="stats-grid" aria-label="Workspace statistics">
+            <article class="stat-card accent-card">
+              <div class="stat-icon mint">${icon('mic')}</div>
+              <div class="stat-body"><span class="stat-label">Minutes dictated</span><strong>68<span class="stat-unit">m</span></strong><small class="positive">↑ 24% <em>vs. last week</em></small></div>
+              <div class="mini-bars mint-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-icon peach">${icon('file')}</div>
+              <div class="stat-body"><span class="stat-label">Sessions created</span><strong>12</strong><small class="positive">↑ 3 <em>this week</em></small></div>
+              <div class="mini-bars peach-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-icon lilac">${icon('spark')}</div>
+              <div class="stat-body"><span class="stat-label">Words captured</span><strong>8,492</strong><small class="positive">↑ 18% <em>vs. last week</em></small></div>
+              <div class="mini-bars lilac-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+          </section>
+
+          <section class="workspace-grid">
+            <div class="dictation-card panel" id="dictation-card">
+              <div class="panel-topline">
+                <div class="panel-title"><span class="live-indicator"></span><span id="panel-title-text">Quick dictation</span><span class="private-pill">Private</span></div>
+                <div class="panel-options">
+                  <button class="icon-button" id="pin-button" aria-label="Star session" data-tooltip="Star session">${icon('star')}</button>
+                  <button class="icon-button" aria-label="More options" data-tooltip="More options">${icon('more')}</button>
+                </div>
+              </div>
+
+              <div class="recording-stage" id="recording-stage">
+                <div class="recording-meta"><span id="record-status">Ready when you are</span><span class="record-time" id="record-time">00:00</span></div>
+                <div class="waveform" id="waveform" aria-hidden="true">
+                  <i style="--h:18%"></i><i style="--h:38%"></i><i style="--h:28%"></i><i style="--h:62%"></i><i style="--h:43%"></i><i style="--h:76%"></i><i style="--h:36%"></i><i style="--h:54%"></i><i style="--h:26%"></i><i style="--h:68%"></i><i style="--h:45%"></i><i style="--h:88%"></i><i style="--h:42%"></i><i style="--h:61%"></i><i style="--h:27%"></i><i style="--h:76%"></i><i style="--h:37%"></i><i style="--h:54%"></i><i style="--h:30%"></i><i style="--h:64%"></i><i style="--h:45%"></i><i style="--h:78%"></i><i style="--h:28%"></i><i style="--h:56%"></i><i style="--h:38%"></i><i style="--h:70%"></i><i style="--h:28%"></i><i style="--h:50%"></i><i style="--h:33%"></i><i style="--h:66%"></i><i style="--h:42%"></i><i style="--h:54%"></i><i style="--h:26%"></i><i style="--h:70%"></i><i style="--h:37%"></i><i style="--h:59%"></i><i style="--h:29%"></i><i style="--h:47%"></i><i style="--h:20%"></i><i style="--h:36%"></i></div>
+                <button class="record-button" id="record-button" aria-label="Start recording"><span class="record-button-inner">${icon('mic')}</span></button>
+                <p class="record-hint" id="record-hint">Click to start speaking</p>
+              </div>
+
+              <div class="transcript-head"><span>Live transcript</span><span id="word-count">0 words</span></div>
+              <div class="transcript-editor" id="transcript-editor" contenteditable="true" data-placeholder="Your words will appear here as you speak..."></div>
+              <div class="editor-footer">
+                <div class="language-select"><span class="language-flag">EN</span><span>English (US)</span><span class="chevron">⌄</span></div>
+                <div class="editor-actions"><button id="clear-button">Clear</button><button class="save-button" id="save-button">Save session <span>⌘ ↵</span></button></div>
+              </div>
+            </div>
+
+            <aside class="right-column">
+              <section class="recent-panel panel" id="sessions">
+                <div class="section-heading"><div><h2>Recent sessions</h2><p>Your latest thoughts, all in one place.</p></div><button class="text-button" id="view-all">View all <span>→</span></button></div>
+                <div class="session-list" id="session-list">
+                  <article class="session-item selected" data-title="The art of starting">
+                    <div class="session-symbol coral-bg">${icon('quote')}</div><div class="session-info"><strong>The art of starting</strong><span>Today, 9:42 AM <b>·</b> 03:24</span></div><button class="session-more" aria-label="Session options">•••</button>
+                  </article>
+                  <article class="session-item" data-title="Grocery list for Sunday">
+                    <div class="session-symbol yellow-bg">${icon('list')}</div><div class="session-info"><strong>Grocery list for Sunday</strong><span>Yesterday <b>·</b> 01:12</span></div><button class="session-more" aria-label="Session options">•••</button>
+                  </article>
+                  <article class="session-item" data-title="Project Atlas notes">
+                    <div class="session-symbol lilac-bg">${icon('spark')}</div><div class="session-info"><strong>Project Atlas notes</strong><span>Sep 08 <b>·</b> 12:08</span></div><button class="session-more" aria-label="Session options">•••</button>
+                  </article>
+                  <article class="session-item" data-title="A better way to plan">
+                    <div class="session-symbol blue-bg">${icon('pen')}</div><div class="session-info"><strong>A better way to plan</strong><span>Sep 07 <b>·</b> 04:36</span></div><button class="session-more" aria-label="Session options">•••</button>
+                  </article>
+                </div>
+              </section>
+
+              <section class="tip-card">
+                <div class="tip-art"><span class="tip-star">✦</span><span class="tip-line line-one"></span><span class="tip-line line-two"></span><span class="tip-line line-three"></span><span class="tip-orbit"></span></div>
+                <div class="tip-content"><span class="tip-label">A little reminder</span><h3>Let your thoughts<br>arrive imperfectly.</h3><p>Paradox keeps the rough edges<br>so you can shape them later.</p></div>
+                <button class="tip-close" aria-label="Dismiss tip">×</button>
+              </section>
+            </aside>
+          </section>
+
+          <section class="bottom-note"><span class="lock-icon">${icon('lock')}</span><span>Your recordings are encrypted and only accessible to you.</span><button>Learn about privacy <span>↗</span></button></section>
+        </div>
+      </main>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>
