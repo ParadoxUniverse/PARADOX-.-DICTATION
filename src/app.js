@@ -211,6 +211,13 @@ function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
 
 recordButton.addEventListener('click', toggleRecording);
 $('#start-top').addEventListener('click', () => { document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); if (!isRecording) startRecording(); });
+if (window.paradoxDesktop?.onWidgetCommand) {
+  window.paradoxDesktop.onWidgetCommand((command) => {
+    if (command !== 'start-recording') return;
+    document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!isRecording) startRecording();
+  });
+}
 editor.addEventListener('input', () => { finalTranscript = editor.innerText; updateWordCount(); persistDraft(); });
 $('#clear-button').addEventListener('click', () => {
   if (!getText()) { showToast('There is nothing to clear.'); return; }
