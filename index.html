@@ -53,7 +53,7 @@
           <div class="user-row">
             <div class="avatar">AS</div>
             <div class="user-info"><strong>Alex Smith</strong><span>Free plan</span></div>
-            <button class="more-button" aria-label="Account options">•••</button>
+            <button class="more-button" id="account-button" aria-label="Account options">•••</button>
           </div>
         </div>
       </aside>
@@ -68,6 +68,7 @@
             <button class="install-button" id="install-button" hidden><span>↓</span> Install app</button>
             <button class="help-link"><span class="help-dot">?</span> Help center</button>
             <button class="icon-button" id="theme-button" aria-label="Toggle theme" data-tooltip="Toggle theme"><svg viewBox="0 0 24 24"><path d="M20.5 15.1A8.4 8.4 0 0 1 8.9 3.5 8.4 8.4 0 1 0 20.5 15.1Z"/></svg></button>
+            <button class="icon-button settings-button" id="settings-button" aria-label="Open settings" data-tooltip="Settings">${icon('settings')}</button>
             <button class="notification-button" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button>
             <div class="top-avatar">AS</div>
           </div>
@@ -127,13 +128,14 @@
               <div class="transcript-editor" id="transcript-editor" contenteditable="true" data-placeholder="Your words will appear here as you speak..."></div>
               <div class="editor-footer">
                 <div class="language-select"><span class="language-flag">EN</span><span>English (US)</span><span class="chevron">⌄</span></div>
-                <div class="editor-actions"><button id="download-audio-button" hidden>Save audio</button><button id="clear-button">Clear</button><button class="save-button" id="save-button">Save session <span>⌘ ↵</span></button></div>
+                <div class="editor-actions"><button id="download-transcript-button" hidden>Export text</button><button id="download-audio-button" hidden>Save audio</button><button id="clear-button">Clear</button><button class="save-button" id="save-button">Save session <span>⌘ ↵</span></button></div>
               </div>
             </div>
 
             <aside class="right-column">
               <section class="recent-panel panel" id="sessions">
                 <div class="section-heading"><div><h2>Recent sessions</h2><p>Your latest thoughts, all in one place.</p></div><button class="text-button" id="view-all">View all <span>→</span></button></div>
+                <div class="session-toolbar"><label class="session-search"><span>${icon('search')}</span><input id="session-search" type="search" placeholder="Search sessions" autocomplete="off"></label><span class="session-summary" id="session-summary">12 saved</span></div>
                 <div class="session-list" id="session-list">
                   <article class="session-item selected" data-title="The art of starting">
                     <div class="session-symbol coral-bg">${icon('quote')}</div><div class="session-info"><strong>The art of starting</strong><span>Today, 9:42 AM <b>·</b> 03:24</span></div><button class="session-more" aria-label="Session options">•••</button>
@@ -161,6 +163,15 @@
           <section class="bottom-note"><span class="lock-icon">${icon('lock')}</span><span>Your recordings are encrypted and only accessible to you.</span><button>Learn about privacy <span>↗</span></button></section>
         </div>
       </main>
+      <div class="modal-backdrop" id="settings-modal" aria-hidden="true">
+        <section class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+          <div class="modal-head"><div><span class="modal-kicker">PARADOX / PREFERENCES</span><h2 id="settings-title">Make it yours.</h2></div><button class="modal-close" id="close-settings" aria-label="Close settings">×</button></div>
+          <div class="settings-section"><label for="language-preference">Dictation language</label><p>Choose the language used by your microphone and transcript engine.</p><select id="language-preference"><option value="en-US">English (United States)</option><option value="en-GB">English (United Kingdom)</option><option value="es-MX">Español (México)</option><option value="fr-FR">Français (France)</option><option value="de-DE">Deutsch (Deutschland)</option></select></div>
+          <div class="settings-section setting-row"><div><label for="autosave-toggle">Keep drafts locally</label><p>Your unfinished thoughts stay on this device.</p></div><label class="switch"><input id="autosave-toggle" type="checkbox" checked><span></span></label></div>
+          <div class="settings-section setting-row"><div><label for="close-widget-toggle">Show quick widget on close</label><p>Available in the Linux desktop app and system tray.</p></div><label class="switch"><input id="close-widget-toggle" type="checkbox" checked><span></span></label></div>
+          <div class="settings-footer"><span><span class="lock-icon">${icon('lock')}</span> Settings are stored locally.</span><button class="primary-button" id="done-settings">Done</button></div>
+        </section>
+      </div>
       <div class="toast" id="toast" role="status"></div>
     </div>
     <script type="module" src="/src/app.js"></script>
