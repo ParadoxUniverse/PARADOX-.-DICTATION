@@ -1,4 +1,5 @@
 import './styles.css';
+import './theme-overrides.css';
 
 const iconPaths = {
   grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
@@ -54,10 +55,33 @@ const STORAGE_KEY = 'paradox-dictation-sessions';
 const DRAFT_KEY = 'paradox-dictation-draft';
 const AUTOSAVE_KEY = 'paradox-dictation-autosave';
 const LANGUAGE_KEY = 'paradox-dictation-language';
+const APPEARANCE_KEY = 'paradox-dictation-appearance';
+const APPEARANCE_DEFAULTS = { theme: 'obsidian', accent: 'lime', grid: true, radar: true, ghost: true, transcriptGrid: true, motion: true, glow: true, boot: true };
+let appearance = { ...APPEARANCE_DEFAULTS };
 const getPreference = (key, fallback) => {
   try { return localStorage.getItem(key) ?? fallback; }
   catch (error) { return fallback; }
 };
+function readAppearance() {
+  try { return { ...APPEARANCE_DEFAULTS, ...JSON.parse(localStorage.getItem(APPEARANCE_KEY) || '{}') }; }
+  catch (error) { return { ...APPEARANCE_DEFAULTS }; }
+}
+function saveAppearance() {
+  try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(appearance)); }
+  catch (error) { /* private browsing may disable preferences */ }
+}
+function applyAppearance() {
+  document.body.dataset.theme = appearance.theme;
+  document.body.dataset.accent = appearance.accent;
+  document.body.classList.toggle('no-grid', !appearance.grid);
+  document.body.classList.toggle('no-radar', !appearance.radar);
+  document.body.classList.toggle('no-ghost', !appearance.ghost);
+  document.body.classList.toggle('no-transcript-grid', !appearance.transcriptGrid);
+  document.body.classList.toggle('no-motion', !appearance.motion);
+  document.body.classList.toggle('no-glow', !appearance.glow);
+}
+appearance = readAppearance();
+applyAppearance();
 
 function showToast(message, type = '') {
   toast.textContent = message;
@@ -175,6 +199,8 @@ function setRecordingUI(active) {
   dictationCard.classList.toggle('is-recording', active);
   recordButton.classList.toggle('is-recording', active);
   waveform.classList.toggle('is-active', active);
+  const startLabel = recordButton.querySelector('.start-label');
+  if (startLabel) startLabel.textContent = active ? 'STOP PARADOX DICTATION' : 'START PARADOX DICTATION';
   if (active) {
     recordStatus.textContent = 'LISTENING';
     recordHint.textContent = 'PRESS SUPER + H TO STOP';
@@ -355,10 +381,32 @@ const settingsModal = $('#settings-modal');
 const languagePreference = $('#language-preference');
 const autosaveToggle = $('#autosave-toggle');
 const closeWidgetToggle = $('#close-widget-toggle');
+const appearanceInputs = {
+  accent: $('#accent-preference'),
+  grid: $('#grid-toggle'),
+  radar: $('#radar-toggle'),
+  ghost: $('#ghost-toggle'),
+  transcriptGrid: $('#transcript-grid-toggle'),
+  motion: $('#motion-toggle'),
+  glow: $('#glow-toggle'),
+  boot: $('#boot-toggle')
+};
+function syncAppearanceControls() {
+  if (appearanceInputs.accent) appearanceInputs.accent.value = appearance.accent;
+  Object.entries(appearanceInputs).forEach(([key, input]) => { if (input && input.type === 'checkbox' && key in appearance) input.checked = appearance[key]; });
+  $$('.theme-option').forEach((option) => option.classList.toggle('active', option.dataset.themeValue === appearance.theme));
+}
+function updateAppearance(key, value) {
+  appearance[key] = value;
+  saveAppearance();
+  applyAppearance();
+  syncAppearanceControls();
+}
 function openSettings() {
   languagePreference.value = getPreference(LANGUAGE_KEY, 'en-US');
   autosaveToggle.checked = getPreference(AUTOSAVE_KEY, 'true') === 'true';
   closeWidgetToggle.checked = getPreference('paradox-widget-on-close', 'true') === 'true';
+  syncAppearanceControls();
   settingsModal.classList.add('open');
   settingsModal.setAttribute('aria-hidden', 'false');
 }
@@ -369,9 +417,20 @@ function closeSettings() {
 $('#settings-button').addEventListener('click', openSettings);
 $('#account-button').addEventListener('click', openSettings);
 $('#language-control')?.addEventListener('click', openSettings);
+$('#theme-button').addEventListener('click', openSettings);
 $('#close-settings').addEventListener('click', closeSettings);
 $('#done-settings').addEventListener('click', closeSettings);
 settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
+$$('.settings-tab').forEach((tab) => tab.addEventListener('click', () => {
+  const target = tab.dataset.settingsTab;
+  $$('.settings-tab').forEach((item) => item.classList.toggle('active', item === tab));
+  $$('[data-settings-pane]').forEach((pane) => pane.classList.toggle('active', pane.dataset.settingsPane === target));
+}));
+$$('.theme-option').forEach((option) => option.addEventListener('click', () => updateAppearance('theme', option.dataset.themeValue)));
+if (appearanceInputs.accent) appearanceInputs.accent.addEventListener('change', (event) => updateAppearance('accent', event.target.value));
+Object.entries(appearanceInputs).forEach(([key, input]) => {
+  if (input && input.type === 'checkbox') input.addEventListener('change', (event) => updateAppearance(key, event.target.checked));
+});
 languagePreference.addEventListener('change', (event) => {
   localStorage.setItem(LANGUAGE_KEY, event.target.value);
   if (recognition) { try { recognition.lang = event.target.value; } catch (error) { /* restart recording to apply */ } }
@@ -398,10 +457,6 @@ if (openSidebar && sidebar && overlay) openSidebar.addEventListener('click', () 
 if (closeSidebarButton) closeSidebarButton.addEventListener('click', closeSidebar);
 if (overlay) overlay.addEventListener('click', closeSidebar);
 
-$('#theme-button').addEventListener('click', () => {
-  document.body.classList.toggle('light-theme');
-  showToast(document.body.classList.contains('light-theme') ? 'Light mode on.' : 'Dark mode on.');
-});
 document.addEventListener('keydown', (event) => {
   const command = event.metaKey || event.ctrlKey;
   if (command && event.key.toLowerCase() === 'n') { event.preventDefault(); $('#new-session').click(); }
@@ -433,4 +488,5 @@ $('#download-transcript-button').hidden = !getText();
 const bootScreen = $('#boot-screen');
 const finishBoot = () => { if (bootScreen) bootScreen.classList.add('done'); };
 $('#skip-boot')?.addEventListener('click', finishBoot);
-window.setTimeout(finishBoot, 3400);
+if (!appearance.boot) finishBoot();
+else window.setTimeout(finishBoot, 3400);

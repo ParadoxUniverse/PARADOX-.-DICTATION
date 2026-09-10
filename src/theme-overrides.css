@@ -1,0 +1,20 @@
+/* Settings: theme, visual layers, and effects */
+body[data-theme="violet"] { --lime:#a28cff; --lime2:#d0c8ff; --green:#7868d2; --violet:#c9bfff; }
+body[data-theme="ember"] { --lime:#ff996c; --lime2:#ffd0a4; --green:#bd654d; --violet:#bba4ff; }
+body[data-accent="cyan"] { --lime:#5ff0e1; --lime2:#bcfff4; --green:#429a9a; }
+body[data-accent="violet"] { --lime:#a28cff; --lime2:#d0c8ff; --green:#7868d2; }
+body.no-grid .hero-grid { display:none; }
+body.no-radar .radar { opacity:0; }
+body.no-ghost .hero-ghost { display:none; }
+body.no-transcript-grid .transcript-body::before { display:none; }
+body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation-duration:.001ms!important; animation-iteration-count:1!important; transition:none!important; }
+body.no-glow .record-button, body.no-glow .brand-glyph, body.no-glow .radar-core, body.no-glow .online-dot, body.no-glow .saved-heading i { box-shadow:none!important; }
+
+.settings-modal { width:min(505px,92vw); max-height:min(700px,90vh); overflow:auto; }
+.settings-tabs { display:flex; gap:4px; margin:0 -23px 1px; padding:0 23px; border-bottom:1px solid #1c2b2e; }
+.settings-tab { position:relative; padding:11px 14px 12px; color:#617176; background:transparent; font:9px var(--mono); letter-spacing:.13em; text-transform:uppercase; }
+.settings-tab:hover { color:#bdcec5; }.settings-tab.active { color:var(--lime); }.settings-tab.active::after { content:''; position:absolute; right:10px; bottom:-1px; left:10px; height:2px; background:var(--lime); box-shadow:0 0 8px color-mix(in srgb,var(--lime) 60%,transparent); }
+.settings-pane { display:none; min-height:280px; padding-top:18px; }.settings-pane.active { display:block; }.settings-intro { margin-bottom:8px; }.pane-kicker { color:#587167; font:8px var(--mono); letter-spacing:.17em; }.settings-intro p { margin:7px 0 0; color:#718187; font:9px/1.5 var(--mono); }
+.theme-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:16px 0 13px; }.theme-option { padding:7px; border:1px solid #233438; border-radius:5px; text-align:left; color:#c3d2c9; background:#0b1214; }.theme-option:hover { border-color:#446154; }.theme-option.active { border-color:var(--lime); box-shadow:0 0 0 1px color-mix(in srgb,var(--lime) 25%,transparent); }.theme-option strong { display:block; margin:8px 2px 4px; font:10px var(--mono); }.theme-option small { display:block; margin:0 2px 2px; color:#64777a; font:7px var(--mono); }.theme-preview { position:relative; height:47px; display:flex; align-items:flex-end; gap:4px; overflow:hidden; padding:8px; border:1px solid #25353a; border-radius:3px; }.theme-preview::before { content:''; position:absolute; inset:0; opacity:.4; background-image:linear-gradient(rgba(150,180,170,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(150,180,170,.22) 1px,transparent 1px); background-size:11px 11px; }.theme-preview i { position:relative; z-index:1; width:5px; border-radius:3px 3px 0 0; background:var(--lime); }.theme-preview i:nth-child(1) { height:14px; opacity:.5; }.theme-preview i:nth-child(2) { height:26px; }.theme-preview i:nth-child(3) { height:19px; opacity:.7; }.preview-obsidian { background:#070b0d; }.preview-violet { background:#090a16; }.preview-violet i { background:#a28cff; }.preview-ember { background:#110b09; }.preview-ember i { background:#ff996c; }
+.settings-row-control { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; border-top:1px solid #1c2b2e; }.settings-row-control > div { min-width:0; }.settings-row-control label { color:#c5d5cb; font:10px var(--mono); }.settings-row-control p { margin:5px 0 0; color:#687b7f; font:8px/1.4 var(--mono); }.settings-row-control select { width:95px; height:30px; padding:0 7px; border:1px solid #2a3d3f; border-radius:3px; outline:0; color:#bcd2c7; background:#10191b; font:9px var(--mono); }.settings-footer { margin-top:4px; }
+@media (max-width:520px) { .settings-modal { padding:18px; }.settings-tabs { margin-left:-18px; margin-right:-18px; padding-left:18px; padding-right:18px; }.theme-grid { gap:5px; }.theme-option { padding:5px; }.theme-option small { font-size:6px; } }
