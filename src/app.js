@@ -371,8 +371,8 @@ $('#close-sidebar').addEventListener('click', closeSidebar);
 overlay.addEventListener('click', closeSidebar);
 
 $('#theme-button').addEventListener('click', () => {
-  document.body.classList.toggle('dark-theme');
-  showToast(document.body.classList.contains('dark-theme') ? 'Dark mode on.' : 'Light mode on.');
+  document.body.classList.toggle('light-theme');
+  showToast(document.body.classList.contains('light-theme') ? 'Light mode on.' : 'Dark mode on.');
 });
 document.addEventListener('keydown', (event) => {
   const command = event.metaKey || event.ctrlKey;
