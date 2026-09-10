@@ -15,7 +15,11 @@ const iconPaths = {
   pen: '<path d="m15.5 5.5 3 3L8 19l-4 1 1-4 10.5-10.5Z"/><path d="m13 8 3 3"/>',
   lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   search: '<circle cx="10.8" cy="10.8" r="5.8"/><path d="m15.2 15.2 4 4"/>',
-  settings: '<path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z"/><path d="m19.2 13.7 1.3 1-.9 1.6-1.6-.5a7.8 7.8 0 0 1-1.5 1.2l-.1 1.7h-1.9l-.5-1.6a7.6 7.6 0 0 1-1.9.2l-1 1.3-1.7-.8.4-1.7a7.5 7.5 0 0 1-1.4-1.4l-1.7.4-.8-1.7 1.3-1a7.8 7.8 0 0 1-.1-1.9l-1.4-1 .8-1.7 1.7.4a7.5 7.5 0 0 1 1.4-1.4l-.4-1.7 1.7-.8 1 1.3a7.6 7.6 0 0 1 1.9-.2l.5-1.6h1.9l.1 1.7a7.8 7.8 0 0 1 1.5 1.2l1.6-.5.9 1.6-1.3 1a7.8 7.8 0 0 1 .1 1.9Z"/>'
+  settings: '<path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z"/><path d="m19.2 13.7 1.3 1-.9 1.6-1.6-.5a7.8 7.8 0 0 1-1.5 1.2l-.1 1.7h-1.9l-.5-1.6a7.6 7.6 0 0 1-1.9.2l-1 1.3-1.7-.8.4-1.7a7.5 7.5 0 0 1-1.4-1.4l-1.7.4-.8-1.7 1.3-1a7.8 7.8 0 0 1-.1-1.9l-1.4-1 .8-1.7 1.7.4a7.5 7.5 0 0 1 1.4-1.4l-.4-1.7 1.7-.8 1 1.3a7.6 7.6 0 0 1 1.9-.2l.5-1.6h1.9l.1 1.7a7.8 7.8 0 0 1 1.5 1.2l1.6-.5.9 1.6-1.3 1a7.8 7.8 0 0 1 .1 1.9Z"/>',
+  close: '<path d="m6 6 12 12M18 6 6 18"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  sun: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v2M12 19.5v2M4.8 4.8l1.4 1.4M17.8 17.8l1.4 1.4M2.5 12h2M19.5 12h2M4.8 19.2l1.4-1.4M17.8 6.2l1.4-1.4"/>',
+  bell: '<path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>'
 };
 function icon(name) { return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || ''}</svg>`; }
 
@@ -232,7 +236,8 @@ function stopRecording() {
 function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
 
 recordButton.addEventListener('click', toggleRecording);
-$('#start-top').addEventListener('click', () => { document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); if (!isRecording) startRecording(); });
+const topStartButton = $('#start-top');
+if (topStartButton) topStartButton.addEventListener('click', () => { document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); if (!isRecording) startRecording(); });
 if (window.paradoxDesktop?.onWidgetCommand) {
   window.paradoxDesktop.onWidgetCommand((command) => {
     if (command !== 'start-recording') return;
@@ -355,7 +360,8 @@ closeWidgetToggle.addEventListener('change', (event) => {
   localStorage.setItem('paradox-widget-on-close', String(event.target.checked));
   window.paradoxDesktop?.setWidgetOnClose?.(event.target.checked);
 });
-$('.tip-close').addEventListener('click', (event) => { event.currentTarget.closest('.tip-card').classList.add('dismissed'); });
+const tipClose = $('.tip-close');
+if (tipClose) tipClose.addEventListener('click', (event) => { event.currentTarget.closest('.tip-card').classList.add('dismissed'); });
 
 const sidebar = $('#sidebar');
 const overlay = $('#sidebar-overlay');
@@ -365,8 +371,8 @@ $('#close-sidebar').addEventListener('click', closeSidebar);
 overlay.addEventListener('click', closeSidebar);
 
 $('#theme-button').addEventListener('click', () => {
-  document.body.classList.toggle('light-theme');
-  showToast(document.body.classList.contains('light-theme') ? 'Light mode on.' : 'Dark mode on.');
+  document.body.classList.toggle('dark-theme');
+  showToast(document.body.classList.contains('dark-theme') ? 'Dark mode on.' : 'Light mode on.');
 });
 document.addEventListener('keydown', (event) => {
   const command = event.metaKey || event.ctrlKey;
