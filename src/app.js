@@ -19,7 +19,11 @@ const iconPaths = {
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   sun: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v2M12 19.5v2M4.8 4.8l1.4 1.4M17.8 17.8l1.4 1.4M2.5 12h2M19.5 12h2M4.8 19.2l1.4-1.4M17.8 6.2l1.4-1.4"/>',
-  bell: '<path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>'
+  bell: '<path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+  sliders: '<path d="M4 7h16M4 17h16M8 4v6M16 14v6"/>',
+  audio: '<path d="M8 14.5V9.5a4 4 0 0 1 8 0v5a4 4 0 0 1-8 0ZM5 12a7 7 0 0 0 14 0M12 19v3M9 22h6"/>',
+  download: '<path d="M12 4v11m0 0-4-4m4 4 4-4M5 19v2h14v-2"/>',
+  save: '<path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/>'
 };
 function icon(name) { return `<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || ''}</svg>`; }
 
@@ -68,13 +72,21 @@ function getText() {
 function updateWordCount() {
   const words = getText() ? getText().split(/\s+/).filter(Boolean).length : 0;
   wordCount.textContent = `${words} ${words === 1 ? 'word' : 'words'}`;
+  const metricWords = $('#metric-words');
+  if (metricWords) metricWords.textContent = words;
+  const metricTime = $('#metric-time');
+  if (metricTime) metricTime.textContent = formatTime(elapsed);
+  const metricWpm = $('#metric-wpm');
+  if (metricWpm) metricWpm.textContent = elapsed > 4 ? Math.round(words / (elapsed / 60)) : 0;
+  const empty = $('#transcript-empty');
+  if (empty) empty.hidden = words > 0;
 }
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
   const secs = (seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
 }
-function updateTimer() { elapsed += 1; recordTime.textContent = formatTime(elapsed); }
+function updateTimer() { elapsed += 1; recordTime.textContent = formatTime(elapsed); updateWordCount(); }
 function readSessions() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch (error) { return []; }
@@ -144,7 +156,14 @@ function filterSessions(query = $('#session-search')?.value || '') {
 }
 function restoreWorkspace() {
   const list = $('#session-list');
-  readSessions().reverse().forEach((session) => list.prepend(sessionElement(session)));
+  const sessions = readSessions();
+  sessions.slice().reverse().forEach((session) => list.prepend(sessionElement(session)));
+  const savedCount = $('#metric-saved');
+  if (savedCount) savedCount.textContent = String(Math.min(99, sessions.length)).padStart(2, '0');
+  const savedTotal = $('#saved-count');
+  if (savedTotal) savedTotal.textContent = `${Math.min(8, sessions.length)}/8`;
+  const savedEmpty = $('#saved-empty');
+  if (savedEmpty) savedEmpty.hidden = sessions.length > 0;
   attachSessionListeners();
   try {
     const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
@@ -157,14 +176,14 @@ function setRecordingUI(active) {
   recordButton.classList.toggle('is-recording', active);
   waveform.classList.toggle('is-active', active);
   if (active) {
-    recordStatus.textContent = 'Listening…';
-    recordHint.textContent = 'Click to pause · we’re listening';
+    recordStatus.textContent = 'LISTENING';
+    recordHint.textContent = 'PRESS SUPER + H TO STOP';
     recordButton.setAttribute('aria-label', 'Stop recording');
     timer = setInterval(updateTimer, 1000);
   } else {
     clearInterval(timer);
-    recordStatus.textContent = elapsed > 0 ? 'Paused · ready to continue' : 'Ready when you are';
-    recordHint.textContent = elapsed > 0 ? 'Click to continue speaking' : 'Click to start speaking';
+    recordStatus.textContent = elapsed > 0 ? 'PAUSED' : 'READY';
+    recordHint.textContent = elapsed > 0 ? 'PRESS SUPER + H TO CONTINUE' : 'PRESS SUPER + H TO START / STOP';
     recordButton.setAttribute('aria-label', 'Start recording');
   }
 }
@@ -298,6 +317,12 @@ $('#save-button').addEventListener('click', () => {
   list.prepend(item);
   attachSessionListeners(list);
   writeSessions([session, ...readSessions().filter((saved) => saved.id !== session.id)]);
+  const savedCount = $('#metric-saved');
+  if (savedCount) savedCount.textContent = String(Math.min(99, readSessions().length)).padStart(2, '0');
+  const savedTotal = $('#saved-count');
+  if (savedTotal) savedTotal.textContent = `${Math.min(8, readSessions().length)}/8`;
+  const savedEmpty = $('#saved-empty');
+  if (savedEmpty) savedEmpty.hidden = true;
   $('#panel-title-text').textContent = session.title;
   persistDraft();
   showToast(`“${session.title}” saved locally.`, 'success');
@@ -343,6 +368,7 @@ function closeSettings() {
 }
 $('#settings-button').addEventListener('click', openSettings);
 $('#account-button').addEventListener('click', openSettings);
+$('#language-control')?.addEventListener('click', openSettings);
 $('#close-settings').addEventListener('click', closeSettings);
 $('#done-settings').addEventListener('click', closeSettings);
 settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) closeSettings(); });
@@ -365,10 +391,12 @@ if (tipClose) tipClose.addEventListener('click', (event) => { event.currentTarge
 
 const sidebar = $('#sidebar');
 const overlay = $('#sidebar-overlay');
-function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('visible'); }
-$('#open-sidebar').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('visible'); });
-$('#close-sidebar').addEventListener('click', closeSidebar);
-overlay.addEventListener('click', closeSidebar);
+function closeSidebar() { if (sidebar) sidebar.classList.remove('open'); if (overlay) overlay.classList.remove('visible'); }
+const openSidebar = $('#open-sidebar');
+const closeSidebarButton = $('#close-sidebar');
+if (openSidebar && sidebar && overlay) openSidebar.addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('visible'); });
+if (closeSidebarButton) closeSidebarButton.addEventListener('click', closeSidebar);
+if (overlay) overlay.addEventListener('click', closeSidebar);
 
 $('#theme-button').addEventListener('click', () => {
   document.body.classList.toggle('light-theme');
@@ -378,7 +406,8 @@ document.addEventListener('keydown', (event) => {
   const command = event.metaKey || event.ctrlKey;
   if (command && event.key.toLowerCase() === 'n') { event.preventDefault(); $('#new-session').click(); }
   if (command && event.key === 'Enter') { event.preventDefault(); $('#save-button').click(); }
-  if (event.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  if (command && event.key.toLowerCase() === 'h') { event.preventDefault(); toggleRecording(); }
+  if (event.key === 'Escape' && sidebar?.classList.contains('open')) closeSidebar();
 });
 
 const installButton = $('#install-button');
@@ -401,3 +430,7 @@ restoreWorkspace();
 filterSessions();
 updateWordCount();
 $('#download-transcript-button').hidden = !getText();
+const bootScreen = $('#boot-screen');
+const finishBoot = () => { if (bootScreen) bootScreen.classList.add('done'); };
+$('#skip-boot')?.addEventListener('click', finishBoot);
+window.setTimeout(finishBoot, 3400);

@@ -155,6 +155,10 @@ if (gotSingleInstanceLock) app.whenReady().then(() => {
   createWidget();
   createTray();
   globalShortcut.register('CommandOrControl+Shift+Space', toggleWidget);
+  globalShortcut.register('Super+H', () => {
+    showMainWindow();
+    mainWindow?.webContents.send('widget-command', 'start-recording');
+  });
   app.on('activate', showMainWindow);
 });
 
