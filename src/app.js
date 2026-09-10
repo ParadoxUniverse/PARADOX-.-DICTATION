@@ -35,7 +35,13 @@ let elapsed = 0;
 let timer;
 let toastTimer;
 let recognition;
+let mediaRecorder;
+let recordedChunks = [];
+let lastRecordingBlob;
 let finalTranscript = '';
+let deferredInstallPrompt;
+const STORAGE_KEY = 'paradox-dictation-sessions';
+const DRAFT_KEY = 'paradox-dictation-draft';
 
 function showToast(message, type = '') {
   toast.textContent = message;
@@ -57,6 +63,68 @@ function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 function updateTimer() { elapsed += 1; recordTime.textContent = formatTime(elapsed); }
+function readSessions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch (error) { return []; }
+}
+function writeSessions(sessions) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 25))); }
+  catch (error) { showToast('Your browser could not save this session.', 'error'); }
+}
+function persistDraft() {
+  try {
+    if (getText()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: getText(), elapsed }));
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch (error) { /* private browsing may disable storage */ }
+}
+function escapeHtml(value) {
+  return String(value).replace(/[&<>\"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' }[character]));
+}
+function titleFromTranscript(text) {
+  const firstSentence = text.split(/[.!?\n]/)[0].trim();
+  if (!firstSentence) return 'Untitled session';
+  return firstSentence.length > 31 ? `${firstSentence.slice(0, 31).trim()}…` : firstSentence;
+}
+function sessionElement(session) {
+  const item = document.createElement('article');
+  item.className = 'session-item';
+  item.dataset.title = session.title;
+  item.dataset.userSession = session.id;
+  item._sessionText = session.text;
+  item.innerHTML = `<div class="session-symbol mint-bg">${icon('mic')}</div><div class="session-info"><strong>${escapeHtml(session.title)}</strong><span>${session.time || 'Saved locally'} <b>·</b> ${formatTime(session.duration || 0)}</span></div><button class="session-more" aria-label="Session options">•••</button>`;
+  return item;
+}
+function selectSession(item) {
+  $$('.session-item').forEach((el) => el.classList.remove('selected'));
+  item.classList.add('selected');
+  $('#panel-title-text').textContent = item.dataset.title;
+  if (typeof item._sessionText === 'string') {
+    editor.textContent = item._sessionText;
+    finalTranscript = item._sessionText;
+    updateWordCount();
+    persistDraft();
+  }
+  showToast(`Opened “${item.dataset.title}”.`);
+}
+function attachSessionListeners(root = document) {
+  $$('.session-item', root).forEach((item) => {
+    if (item.dataset.bound) return;
+    item.dataset.bound = 'true';
+    item.addEventListener('click', (event) => {
+      if (event.target.closest('.session-more')) { showToast('Session options coming soon.'); return; }
+      selectSession(item);
+    });
+  });
+}
+function restoreWorkspace() {
+  const list = $('#session-list');
+  readSessions().reverse().forEach((session) => list.prepend(sessionElement(session)));
+  attachSessionListeners();
+  try {
+    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+    if (draft?.text) { editor.textContent = draft.text; finalTranscript = draft.text; elapsed = draft.elapsed || 0; recordTime.textContent = formatTime(elapsed); }
+  } catch (error) { /* start with an empty editor */ }
+}
 function setRecordingUI(active) {
   isRecording = active;
   dictationCard.classList.toggle('is-recording', active);
@@ -91,6 +159,7 @@ function buildRecognition() {
     }
     editor.textContent = finalTranscript + interim;
     updateWordCount();
+    persistDraft();
     const range = document.createRange();
     range.selectNodeContents(editor);
     range.collapse(false);
@@ -104,45 +173,89 @@ function buildRecognition() {
   instance.onend = () => { if (isRecording) { try { instance.start(); } catch (e) { /* already starting */ } } };
   return instance;
 }
-function startRecording() {
+async function startRecording() {
   if (!recognition) recognition = buildRecognition();
+  let capturedAudio = false;
+  if (navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (event) => { if (event.data.size) recordedChunks.push(event.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        if (recordedChunks.length) {
+          lastRecordingBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          $('#download-audio-button').hidden = false;
+        }
+      };
+      mediaRecorder.start();
+      capturedAudio = true;
+    } catch (error) {
+      showToast('Microphone access was blocked. You can still type your transcript.', 'error');
+    }
+  }
   if (recognition) {
     try { recognition.start(); } catch (e) { /* browser may already be listening */ }
-  } else {
+  } else if (!capturedAudio) {
     showToast('Live dictation is not supported here — demo mode is on.', 'info');
   }
   setRecordingUI(true);
 }
 function stopRecording() {
   if (recognition) { try { recognition.stop(); } catch (e) { /* no-op */ } }
+  if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
   setRecordingUI(false);
 }
 function toggleRecording() { isRecording ? stopRecording() : startRecording(); }
 
 recordButton.addEventListener('click', toggleRecording);
 $('#start-top').addEventListener('click', () => { document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' }); if (!isRecording) startRecording(); });
-editor.addEventListener('input', () => { finalTranscript = editor.innerText; updateWordCount(); });
+editor.addEventListener('input', () => { finalTranscript = editor.innerText; updateWordCount(); persistDraft(); });
 $('#clear-button').addEventListener('click', () => {
   if (!getText()) { showToast('There is nothing to clear.'); return; }
-  editor.textContent = ''; finalTranscript = ''; updateWordCount(); showToast('Transcript cleared.');
+  editor.textContent = ''; finalTranscript = ''; updateWordCount(); persistDraft(); showToast('Transcript cleared.');
+});
+$('#download-audio-button').addEventListener('click', async () => {
+  if (!lastRecordingBlob) { showToast('Record something first.', 'error'); return; }
+  const filename = `paradox-recording-${new Date().toISOString().slice(0, 10)}.webm`;
+  if (window.paradoxDesktop?.saveAudio) {
+    const bytes = new Uint8Array(await lastRecordingBlob.arrayBuffer());
+    const destination = await window.paradoxDesktop.saveAudio(bytes, filename);
+    showToast(`Audio saved to ${destination}.`, 'success');
+    return;
+  }
+  const url = URL.createObjectURL(lastRecordingBlob);
+  const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Audio download started.', 'success');
 });
 $('#save-button').addEventListener('click', () => {
-  if (!getText()) { showToast('Add a few words before saving.', 'error'); editor.focus(); return; }
-  const list = $('#session-list');
+  const text = getText();
+  if (!text) { showToast('Add a few words before saving.', 'error'); editor.focus(); return; }
   const now = new Date();
   const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const item = document.createElement('article');
-  item.className = 'session-item selected newly-saved';
-  item.dataset.title = 'Untitled session';
-  item.innerHTML = `<div class="session-symbol mint-bg">${icon('mic')}</div><div class="session-info"><strong>Untitled session</strong><span>Just now <b>·</b> ${formatTime(elapsed)}</span></div><button class="session-more" aria-label="Session options">•••</button>`;
-  $$('.session-item', list).forEach(el => el.classList.remove('selected'));
+  const session = {
+    id: window.crypto?.randomUUID?.() || `session-${Date.now()}`,
+    title: titleFromTranscript(text),
+    text,
+    duration: elapsed,
+    time: `Today, ${time}`
+  };
+  const list = $('#session-list');
+  const item = sessionElement(session);
+  item.classList.add('selected', 'newly-saved');
+  $$('.session-item', list).forEach((el) => el.classList.remove('selected'));
   list.prepend(item);
-  $('#panel-title-text').textContent = 'Untitled session';
-  showToast(`Session saved at ${time}.`, 'success');
+  attachSessionListeners(list);
+  writeSessions([session, ...readSessions().filter((saved) => saved.id !== session.id)]);
+  $('#panel-title-text').textContent = session.title;
+  persistDraft();
+  showToast(`“${session.title}” saved locally.`, 'success');
 });
 $('#new-session').addEventListener('click', () => {
   if (isRecording) stopRecording();
-  editor.textContent = ''; finalTranscript = ''; elapsed = 0; recordTime.textContent = '00:00'; updateWordCount();
+  editor.textContent = ''; finalTranscript = ''; elapsed = 0; recordTime.textContent = '00:00'; updateWordCount(); persistDraft();
   $('#panel-title-text').textContent = 'Quick dictation';
   $$('.session-item').forEach(el => el.classList.remove('selected'));
   document.querySelector('.dictation-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -152,14 +265,6 @@ $('#pin-button').addEventListener('click', (event) => {
   event.currentTarget.classList.toggle('pinned');
   showToast(event.currentTarget.classList.contains('pinned') ? 'Added to starred.' : 'Removed from starred.');
 });
-
-$$('.session-item').forEach((item) => item.addEventListener('click', (event) => {
-  if (event.target.closest('.session-more')) { showToast('Session options coming soon.'); return; }
-  $$('.session-item').forEach(el => el.classList.remove('selected'));
-  item.classList.add('selected');
-  $('#panel-title-text').textContent = item.dataset.title;
-  showToast(`Opened “${item.dataset.title}”.`);
-}));
 
 $('#import-button').addEventListener('click', () => $('#audio-input').click());
 $('#audio-input').addEventListener('change', (event) => {
@@ -189,4 +294,21 @@ document.addEventListener('keydown', (event) => {
   if (command && event.key === 'Enter') { event.preventDefault(); $('#save-button').click(); }
   if (event.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
 });
+
+const installButton = $('#install-button');
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+});
+installButton.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) { showToast('Use your browser menu to install Paradox as an app.'); return; }
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+window.addEventListener('appinstalled', () => { installButton.hidden = true; showToast('Paradox was installed on your computer.', 'success'); });
+if (navigator.serviceWorker) navigator.serviceWorker.register('./sw.js').catch(() => { /* offline mode is optional in Electron */ });
+restoreWorkspace();
 updateWordCount();

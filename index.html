@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101110" />
+    <meta name="description" content="Private, focused dictation for Linux and the web." />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>Paradox — Dictation, without the friction</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,6 +65,7 @@
           <button class="icon-button menu-button" id="open-sidebar" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
           <div class="breadcrumbs"><span>Workspace</span><span class="crumb-separator">/</span><strong>Overview</strong></div>
           <div class="top-actions">
+            <button class="install-button" id="install-button" hidden><span>↓</span> Install app</button>
             <button class="help-link"><span class="help-dot">?</span> Help center</button>
             <button class="icon-button" id="theme-button" aria-label="Toggle theme" data-tooltip="Toggle theme"><svg viewBox="0 0 24 24"><path d="M20.5 15.1A8.4 8.4 0 0 1 8.9 3.5 8.4 8.4 0 1 0 20.5 15.1Z"/></svg></button>
             <button class="notification-button" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button>
@@ -123,7 +127,7 @@
               <div class="transcript-editor" id="transcript-editor" contenteditable="true" data-placeholder="Your words will appear here as you speak..."></div>
               <div class="editor-footer">
                 <div class="language-select"><span class="language-flag">EN</span><span>English (US)</span><span class="chevron">⌄</span></div>
-                <div class="editor-actions"><button id="clear-button">Clear</button><button class="save-button" id="save-button">Save session <span>⌘ ↵</span></button></div>
+                <div class="editor-actions"><button id="download-audio-button" hidden>Save audio</button><button id="clear-button">Clear</button><button class="save-button" id="save-button">Save session <span>⌘ ↵</span></button></div>
               </div>
             </div>
 

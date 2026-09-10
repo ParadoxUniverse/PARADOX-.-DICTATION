@@ -1,14 +1,44 @@
 {
   "name": "paradox-dictation",
-  "private": true,
+  "productName": "Paradox Dictation",
   "version": "1.0.0",
+  "description": "Private, focused dictation for Linux and the web.",
+  "author": "Paradox Universe",
+  "private": true,
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "desktop": "npm run build && electron .",
+    "desktop:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && cross-env PARADOX_DEV_URL=http://localhost:5173 electron .\"",
+    "package:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.paradox.universe.dictation",
+    "productName": "Paradox Dictation",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Utility",
+      "executableName": "paradox-dictation"
+    }
   },
   "devDependencies": {
-    "vite": "latest"
+    "concurrently": "latest",
+    "cross-env": "latest",
+    "electron": "latest",
+    "electron-builder": "latest",
+    "vite": "latest",
+    "wait-on": "latest"
   }
 }
